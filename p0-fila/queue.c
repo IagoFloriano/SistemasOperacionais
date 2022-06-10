@@ -31,15 +31,17 @@ int queue_size (queue_t *queue){
 }
 
 void queue_print (char *name, queue_t *queue, void print_elem (void*) ){
-  printf("%s", name);
-  if (!queue) return;
+  printf("%s[", name);
+  if (!queue) {printf("]\n"); return;}
 
   queue_t* atual = queue->next;
   print_elem(queue);
   while(atual != queue){
+    printf(" ");
     print_elem(atual);
     atual = atual->next;
   }
+  printf("]\n");
 }
 
 int queue_append (queue_t **queue, queue_t *elem){
@@ -53,7 +55,7 @@ int queue_append (queue_t **queue, queue_t *elem){
     return -2;
   }
   if ( (elem->next != NULL) || (elem->prev != NULL) ){
-    fprintf(stderr, "ERRO: Tentativa de inserir elemento de uma fila em outra fila\n");
+    fprintf(stderr, "ERRO: Tentativa de inserir elemento que já está em uma fila\n");
     return -3;
   }
 
