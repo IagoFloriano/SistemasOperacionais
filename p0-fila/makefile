@@ -16,4 +16,7 @@ debug : testafila.o queue.o
 
 #------------------------------------------------------------------------------
 clean :
-	$(RM) testafila *.o
+	$(RM) *.o
+
+purge : clean
+	$(RM) testafila
