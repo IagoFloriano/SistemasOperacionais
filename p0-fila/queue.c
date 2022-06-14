@@ -47,15 +47,15 @@ void queue_print (char *name, queue_t *queue, void print_elem (void*) ){
 int queue_append (queue_t **queue, queue_t *elem){
   // casos de erro
   if (!queue){
-    fprintf(stderr, "ERRO: Tentativa de inserir elemento em fila que não existe\n");
+    fprintf(stderr, "ERRO QUEUE.C: Tentativa de inserir elemento em fila que não existe\n");
     return -1;
   }
   if (!elem){
-    fprintf(stderr, "ERRO: Tentativa de inserir elemento que não existe em fila\n");
+    fprintf(stderr, "ERRO QUEUE.C: Tentativa de inserir elemento que não existe em fila\n");
     return -2;
   }
   if ( (elem->next != NULL) || (elem->prev != NULL) ){
-    fprintf(stderr, "ERRO: Tentativa de inserir elemento que já está em uma fila\n");
+    fprintf(stderr, "ERRO QUEUE.C: Tentativa de inserir elemento que já está em uma fila\n");
     return -3;
   }
 
@@ -80,19 +80,19 @@ int queue_append (queue_t **queue, queue_t *elem){
 int queue_remove (queue_t **queue, queue_t *elem){
   // casos de erro
   if (!queue){
-    fprintf(stderr, "ERRO: Tentativa de remover elemento de uma fila que não existe\n");
+    fprintf(stderr, "ERRO QUEUE.C: Tentativa de remover elemento de uma fila que não existe\n");
     return -1;
   }
   if (!(*queue)){
-    fprintf(stderr, "ERRO: Tentativa de remover elemento de uma fila vazia\n");
+    fprintf(stderr, "ERRO QUEUE.C: Tentativa de remover elemento de uma fila vazia\n");
     return -2;
   }
   if (!elem){
-    fprintf(stderr, "ERRO: Tentativa de remover elemento que não existe\n");
+    fprintf(stderr, "ERRO QUEUE.C: Tentativa de remover elemento que não existe\n");
     return -3;
   }
   if (!(same_queue(*queue, elem))){
-    fprintf(stderr, "ERRO: Tentativa de remover elemento de uma fila que não o contém\n");
+    fprintf(stderr, "ERRO QUEUE.C: Tentativa de remover elemento de uma fila que não o contém\n");
     return -4;
   }
 
