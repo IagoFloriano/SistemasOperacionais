@@ -31,7 +31,7 @@ int queue_size (queue_t *queue){
 }
 
 void queue_print (char *name, queue_t *queue, void print_elem (void*) ){
-  printf("%s[", name);
+  printf("%s: [", name);
   if (!queue) {printf("]\n"); return;}
 
   queue_t* atual = queue->next;
