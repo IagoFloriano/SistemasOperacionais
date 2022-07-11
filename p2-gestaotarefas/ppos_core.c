@@ -44,12 +44,16 @@ int task_create(task_t *task, void (*start_func)(void *), void *arg){
   }
 
   makecontext(task, start_func, 1, arg) ;
+
+  task->id = ++lastID;
 }
 
 void task_exit(int exit_code){
+  task_switch(&contextMain);
 }
 
 int task_switch(task_t *task){
+  swapcontext(&(currContext.context), &(task->));
 }
 
 int task_id(){
