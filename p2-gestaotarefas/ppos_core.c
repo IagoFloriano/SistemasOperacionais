@@ -4,34 +4,54 @@
 #include "ppos.h"
 #include "ppos_data.h"
 
+#define STACKSIZE 64*1024	// tamanho de pilha das threads
+
 task_t mainContext, currContext;
 int lastID;
 
 void ppos_init(){
-  setvbuf (stdout, 0, _IONBF, 0) ;
+  setvbuf(stdout, 0, _IONBF, 0) ;
   lastID = 0;
   contextMain.id = 0;
-  currContext = contextMain
-}
+  currContext = mainContext;
 
-int task_create (task_t *task, void (*start_func)(void *), void *arg){
-  makecontext(task, start_func, 1, arg);
-  if(!task){
-    #ifdef DEBUG
-    perror("PPOS_CORE: ERRO ao criar tarefa que teria id %d\n", lastID + 1);
-    #endif
-    return -1;
+  getcontext(mainContext.context)
+
+  char *stack = malloc(STACKSIZE) ;
+  if(stack){
+    mainContext.context.uc_stack.ss_sp = stack ;
+    mainContext.context.uc_stack.ss_size = STACKSIZE ;
+    mainContext.context.uc_stack.ss_flags = 0 ;
+    mainContext.context.uc_link = 0 ;
+  }else{
+    perror("Erro na criação da pilha: ") ;
+    exit(1) ;
   }
-  task->id = ++lastID;
-  return task->id;
 }
 
-void task_exit (int exit_code){
+int task_create(task_t *task, void (*start_func)(void *), void *arg){
+  getcontext(&(task->context))
+
+  char *stack = malloc(STACKSIZE) ;
+  if(stack){
+    task->context.uc_stack.ss_sp = stack ;
+    task->context.uc_stack.ss_size = STACKSIZE ;
+    task->context.uc_stack.ss_flags = 0 ;
+    task->context.uc_link = 0 ;
+  }else{
+    perror("Erro na criação da pilha: ") ;
+    exit(1) ;
+  }
+
+  makecontext(task, start_func, 1, arg) ;
 }
 
-int task_switch (task_t *task){
+void task_exit(int exit_code){
 }
 
-int task_id (){
+int task_switch(task_t *task){
+}
+
+int task_id(){
   return currContext.id;
 }
