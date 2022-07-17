@@ -1,18 +1,20 @@
-DEBUG_FLAGS = -g
-CFLAGS = -Wall -std=gnu99
+DEBUG_FLAGS = -g -DDEBUG
+CFLAGS = -Wall -std=gnu99 # $(DEBUG_FLAGS)
 
 #------------------------------------------------------------------------------
 .PHONY : all clean
 
 #------------------------------------------------------------------------------
-all : 
+all : pingpong-dispatcher
 
-ppos_core.o : ppos_core.c
+pingpong-dispatcher: ppos_core.o pingpong-dispatcher.o queue.o
+	gcc -o $@ $^
+
+%.o: %.c
 	gcc $(CFLAGS) -c $^
-
 #------------------------------------------------------------------------------
 clean :
 	$(RM) *.o
 
 purge : clean
-	$(RM) pingpong-tasks1 pingpong-tasks2 pingpong-tasks3
+	$(RM) pingpong-dispatcher
