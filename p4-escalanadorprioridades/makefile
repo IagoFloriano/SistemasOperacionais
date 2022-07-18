@@ -17,4 +17,4 @@ clean :
 	$(RM) *.o
 
 purge : clean
-	$(RM) pingpong-dispatcher
+	$(RM) pingpong-scheduler
