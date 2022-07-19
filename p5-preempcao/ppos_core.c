@@ -2,6 +2,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <signal.h>
+#include <sys/time.h>
 #include "ppos.h"
 #include "ppos_data.h"
 #include "queue.h"
@@ -18,13 +20,25 @@
 task_t mainTask, *currTask, *taskQ, dispatcher;
 int lastID, userTasks;
 
+struct sigaction tickaction;
+struct itimerval ticktimer;
+int tickcount;
+
+void tickfunc(int signum){
+  if (currTask->preemptable){
+    if (--tickcount < 0)
+      task_yield();
+  }
+}
+
+// imprime o id de um elemento da fila
 void print_elem(void *ptr){
   task_t *task = ptr;
 
   if(!task)
     return;
 
-  printf("%d(%d)",task->id,task->dinprio);
+  printf("%d",task->id);
 }
 
 // retorna qual task será a proxima a ser executada
@@ -40,6 +54,7 @@ task_t *scheduler(){
   return oldest;
 }
 
+// cuida de lançar tasks
 void dispatcher_body(){
   while(userTasks > 0){
     #ifdef DEBUG
@@ -48,6 +63,7 @@ void dispatcher_body(){
     task_t *proxima = scheduler();
 
     if (proxima){
+      tickcount = 20;
       task_switch(proxima);
 
       switch(proxima->status){
@@ -67,21 +83,52 @@ void dispatcher_body(){
   task_switch(&mainTask);
 }
 
+// faz inicialização do sistema
 void ppos_init(){
+  debug_print("PPOS: Iniciando sistema\n");
   setvbuf(stdout, 0, _IONBF, 0) ;
   lastID = 0;
+
+  debug_print("PPOS: Criando mainTask...\n");
   mainTask.id = 0;
   mainTask.status = READY;
   currTask = &mainTask;
-
   getcontext(&(mainTask.context));
   mainTask.status = READY;
+  mainTask.preemptable = 0;
+  debug_print("PPOS: Criado mainTask\n");
+
+  debug_print("PPOS: Criando dispatcher...\n");
   task_create(&dispatcher, dispatcher_body, NULL);
   queue_remove( (queue_t**)&taskQ, (queue_t*)&dispatcher);
+  dispatcher.preemptable = 0;
   userTasks = 0;
+  debug_print("PPOS: Criado dispatcher.\n");
+
+  debug_print("PPOS: Criando timer...\n");
+  tickaction.sa_handler = tickfunc;
+  sigemptyset(&tickaction.sa_mask);
+  tickaction.sa_flags = 0;
+  if (sigaction (SIGALRM, &tickaction, 0) < 0){
+    perror ("Erro em sigaction: ") ;
+    exit (1) ;
+  }
+  // ajustar valores do timer
+  ticktimer.it_value.tv_usec    = 1000;
+  ticktimer.it_value.tv_sec     = 0;
+  ticktimer.it_interval.tv_usec = 1000;
+  ticktimer.it_interval.tv_sec  = 0;
+  // armar timer
+  if (setitimer (ITIMER_REAL, &ticktimer, 0) < 0){
+    perror ("Erro em setitimer: ") ;
+    exit (1) ;
+  }
+  debug_print("PPOS: Timer criado.\n");
+
   debug_print("PPOS: Iniciado o Sistema\n");
 }
 
+// Cria uma task retorna seu id em caso de sucesso
 int task_create(task_t *task, void (*start_func)(void *), void *arg){
   task->status = NEW;
   getcontext(&(task->context));
@@ -102,12 +149,14 @@ int task_create(task_t *task, void (*start_func)(void *), void *arg){
   task->status = READY;
   task->id = ++lastID;
   task->statprio = task->dinprio = 0;
+  task->preemptable = 1;
   queue_append( (queue_t**)&taskQ, (queue_t*)task);
   userTasks++;
-  debug_print("PPOS: Criado task com id %d, atualmente %d userTasks\n", lastID-1,userTasks);
+  debug_print("PPOS: Criado task com id %d, atualmente %d userTasks\n", lastID,userTasks);
   return task->id;
 }
 
+// Termina task atual em execução
 void task_exit(int exit_code){
   currTask->status = TERMINATED;
   userTasks--;
@@ -115,6 +164,7 @@ void task_exit(int exit_code){
   task_switch(&dispatcher);
 }
 
+// Troca de contexto para o de task
 int task_switch(task_t *task){
   task_t *lastTask = currTask;
   currTask = task;
@@ -127,14 +177,18 @@ int task_switch(task_t *task){
   return 0;
 }
 
+// retorna o id da task atual
 int task_id(){
   return currTask->id;
 }
 
+// devolve a cpu para o sistema
 void task_yield (){
   task_switch(&dispatcher);
 }
 
+// troca prioridade de task
+// se task for nulo troca prioridade da task atual
 void task_setprio (task_t *task, int prio){
   if (!task)
     task = currTask;
@@ -147,6 +201,8 @@ void task_setprio (task_t *task, int prio){
   task->statprio = task->dinprio = prio;
 }
 
+// retorna prioridade de task
+// se task for nulo retorna prioridade da task atual
 int task_getprio (task_t *task){
   if (!task)
     task = currTask;
