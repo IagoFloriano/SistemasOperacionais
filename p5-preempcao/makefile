@@ -7,6 +7,9 @@ CFLAGS = -Wall -std=gnu99 # $(DEBUG_FLAGS)
 #------------------------------------------------------------------------------
 all : pingpong-preempcao
 
+debug: CFLAGS += $(DEBUG_FLAGS)
+debug: all
+
 pingpong-preempcao: ppos_core.o pingpong-preempcao.o queue.o
 	gcc -o $@ $^
 
