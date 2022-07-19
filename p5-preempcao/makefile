@@ -5,10 +5,13 @@ CFLAGS = -Wall -std=gnu99 # $(DEBUG_FLAGS)
 .PHONY : all clean
 
 #------------------------------------------------------------------------------
-all : pingpong-preempcao
+all : pingpong-preempcao pingpong-preempcao-stress
 
 debug: CFLAGS += $(DEBUG_FLAGS)
 debug: all
+
+pingpong-preempcao-stress: ppos_core.o pingpong-preempcao-stress.o queue.o
+	gcc -o $@ $^
 
 pingpong-preempcao: ppos_core.o pingpong-preempcao.o queue.o
 	gcc -o $@ $^
@@ -20,4 +23,4 @@ clean :
 	$(RM) *.o
 
 purge : clean
-	$(RM) pingpong-preempcao
+	$(RM) pingpong-preempcao pingpong-preempcao-stress
