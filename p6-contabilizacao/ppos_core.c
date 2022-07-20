@@ -19,12 +19,20 @@
 
 task_t mainTask, *currTask, *taskQ, dispatcher;
 int lastID, userTasks;
+unsigned int globalSysTime;
 
 struct sigaction tickaction;
 struct itimerval ticktimer;
 int tickcount;
 
+// retorna tempo do sistema
+unsigned int systime(){
+  return globalSysTime;
+}
+
+// função a rodar todo tick do sistema
 void tickfunc(int signum){
+  globalSysTime++;
   if (currTask->preemptable){
     if (--tickcount < 0)
       task_yield();
@@ -65,7 +73,6 @@ void dispatcher_body(){
     if (proxima){
       tickcount = 20;
       task_switch(proxima);
-
       switch(proxima->status){
         // Colocar de volta na fila caso esteja pronta
         case READY:
@@ -80,6 +87,12 @@ void dispatcher_body(){
     }
   }
 
+  unsigned int now = systime();
+  dispatcher.totalProcTime += now - dispatcher.lastProcTime;
+  dispatcher.endSysTime = now;
+  dispatcher.totalSysTime = now - dispatcher.startSysTime;
+  printf("Task %d exit: execution time %d ms, processor time %d ms, %d activations\n",
+         dispatcher.id,dispatcher.totalSysTime,dispatcher.totalProcTime,dispatcher.activations);
   task_switch(&mainTask);
 }
 
@@ -88,6 +101,7 @@ void ppos_init(){
   debug_print("PPOS: Iniciando sistema\n");
   setvbuf(stdout, 0, _IONBF, 0) ;
   lastID = 0;
+  globalSysTime = 0;
 
   debug_print("PPOS: Criando mainTask...\n");
   mainTask.id = 0;
@@ -96,6 +110,11 @@ void ppos_init(){
   getcontext(&(mainTask.context));
   mainTask.status = READY;
   mainTask.preemptable = 0;
+  mainTask.startSysTime  = globalSysTime;
+  mainTask.endSysTime    = 0;
+  mainTask.activations   = 0;
+  mainTask.lastProcTime  = 0;
+  mainTask.totalProcTime = 0;
   debug_print("PPOS: Criado mainTask\n");
 
   debug_print("PPOS: Criando dispatcher...\n");
@@ -150,6 +169,11 @@ int task_create(task_t *task, void (*start_func)(void *), void *arg){
   task->id = ++lastID;
   task->statprio = task->dinprio = 0;
   task->preemptable = 1;
+  task->startSysTime  = systime();
+  task->endSysTime    = 0;
+  task->activations   = 0;
+  task->lastProcTime  = 0;
+  task->totalProcTime = 0;
   queue_append( (queue_t**)&taskQ, (queue_t*)task);
   userTasks++;
   debug_print("PPOS: Criado task com id %d, atualmente %d userTasks\n", lastID,userTasks);
@@ -158,9 +182,16 @@ int task_create(task_t *task, void (*start_func)(void *), void *arg){
 
 // Termina task atual em execução
 void task_exit(int exit_code){
+  debug_print("PPOS: Encerrando tarefa com id %d\n", currTask->id);
   currTask->status = TERMINATED;
   userTasks--;
-  debug_print("PPOS: Encerrando tarefa com id %d\n", currTask->id);
+
+  unsigned int now = systime();
+  currTask->totalProcTime += now - currTask->lastProcTime;
+  currTask->endSysTime = now;
+  currTask->totalSysTime = now - currTask->startSysTime;
+  printf("Task %d exit: execution time %d ms, processor time %d ms, %d activations\n",
+         currTask->id,currTask->totalSysTime,currTask->totalProcTime,currTask->activations);
   task_switch(&dispatcher);
 }
 
@@ -172,6 +203,13 @@ int task_switch(task_t *task){
   currTask->status = RUNNING;
   currTask->dinprio = currTask->statprio;
   lastTask->dinprio = lastTask->statprio;
+
+  unsigned int now = systime();
+  if(lastTask->endSysTime == 0)
+    lastTask->totalProcTime += now - lastTask->lastProcTime;
+
+  currTask->activations++;
+  currTask->lastProcTime = now;
   debug_print("PPOS: Trocando de tarefas %d->%d\n", lastTask->id, currTask->id);
   swapcontext(&(lastTask->context), &(currTask->context));
   return 0;

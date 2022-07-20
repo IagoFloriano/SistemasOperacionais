@@ -25,7 +25,13 @@ typedef struct task_t
   short preemptable ;			// pode ser preemptada?
   short statprio;
   short dinprio;
-   // ... (outros campos serão adicionados mais tarde)
+  unsigned int startSysTime  ;
+  unsigned int endSysTime    ;
+  unsigned int totalSysTime  ;
+  unsigned int activations   ;
+  unsigned int lastProcTime  ;
+  unsigned int totalProcTime ;
+  // ... (outros campos serão adicionados mais tarde)
 } task_t ;
 
 // estrutura que define um semáforo
