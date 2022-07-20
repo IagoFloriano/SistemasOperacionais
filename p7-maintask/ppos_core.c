@@ -93,7 +93,7 @@ void dispatcher_body(){
   dispatcher.totalSysTime = now - dispatcher.startSysTime;
   printf("Task %d exit: execution time %d ms, processor time %d ms, %d activations\n",
          dispatcher.id,dispatcher.totalSysTime,dispatcher.totalProcTime,dispatcher.activations);
-  task_switch(&mainTask);
+  // task_switch(&mainTask);
 }
 
 // faz inicialização do sistema
@@ -109,19 +109,20 @@ void ppos_init(){
   currTask = &mainTask;
   getcontext(&(mainTask.context));
   mainTask.status = READY;
-  mainTask.preemptable = 0;
+  mainTask.preemptable = 1;
   mainTask.startSysTime  = globalSysTime;
   mainTask.endSysTime    = 0;
   mainTask.activations   = 0;
   mainTask.lastProcTime  = 0;
   mainTask.totalProcTime = 0;
+  queue_append( (queue_t**)&taskQ, (queue_t*)&mainTask);
   debug_print("PPOS: Criado mainTask\n");
 
   debug_print("PPOS: Criando dispatcher...\n");
   task_create(&dispatcher, dispatcher_body, NULL);
   queue_remove( (queue_t**)&taskQ, (queue_t*)&dispatcher);
   dispatcher.preemptable = 0;
-  userTasks = 0;
+  userTasks = 1;
   debug_print("PPOS: Criado dispatcher.\n");
 
   debug_print("PPOS: Criando timer...\n");
@@ -145,6 +146,11 @@ void ppos_init(){
   debug_print("PPOS: Timer criado.\n");
 
   debug_print("PPOS: Iniciado o Sistema\n");
+  debug_print("PPOS: Lançando dispatcher\n");
+  #ifdef DEBUG
+  queue_print("PPOS: taskQ ", (queue_t*)taskQ, print_elem);
+  #endif
+  task_yield();
 }
 
 // Cria uma task retorna seu id em caso de sucesso
