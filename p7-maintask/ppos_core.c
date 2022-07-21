@@ -91,7 +91,7 @@ void dispatcher_body(){
   dispatcher.totalProcTime += now - dispatcher.lastProcTime;
   dispatcher.endSysTime = now;
   dispatcher.totalSysTime = now - dispatcher.startSysTime;
-  printf("Task %d exit: execution time %d ms, processor time %d ms, %d activations\n",
+  printf("Task %6d exit: execution time %6d ms, processor time %6d ms, %6d activations\n",
          dispatcher.id,dispatcher.totalSysTime,dispatcher.totalProcTime,dispatcher.activations);
   // task_switch(&mainTask);
 }
@@ -196,7 +196,7 @@ void task_exit(int exit_code){
   currTask->totalProcTime += now - currTask->lastProcTime;
   currTask->endSysTime = now;
   currTask->totalSysTime = now - currTask->startSysTime;
-  printf("Task %d exit: execution time %d ms, processor time %d ms, %d activations\n",
+  printf("Task %6d exit: execution time %6d ms, processor time %6d ms, %6d activations\n",
          currTask->id,currTask->totalSysTime,currTask->totalProcTime,currTask->activations);
   task_switch(&dispatcher);
 }
