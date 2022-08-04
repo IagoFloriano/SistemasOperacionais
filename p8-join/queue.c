@@ -94,7 +94,7 @@ int queue_remove (queue_t **queue, queue_t *elem){
     return -3;
   }
   if (!(same_queue(*queue, elem))){
-    fprintf(stderr, "ERRO QUEUE.C: Tentativa de remover elemento de uma fila que não o contém\n");
+    //fprintf(stderr, "ERRO QUEUE.C: Tentativa de remover elemento de uma fila que não o contém\n");
     return -4;
   }
 

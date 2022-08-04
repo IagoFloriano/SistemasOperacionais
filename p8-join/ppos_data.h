@@ -31,6 +31,8 @@ typedef struct task_t
   unsigned int activations   ;
   unsigned int lastProcTime  ;
   unsigned int totalProcTime ;
+  struct task_t *joined;
+  int rcvexit;
   // ... (outros campos serão adicionados mais tarde)
 } task_t ;
 

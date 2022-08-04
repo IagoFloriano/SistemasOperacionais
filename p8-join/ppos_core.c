@@ -65,9 +65,9 @@ task_t *scheduler(){
 // cuida de lançar tasks
 void dispatcher_body(){
   while(userTasks > 0){
-    #ifdef DEBUG
+#ifdef DEBUG
     queue_print("PPOS: taskQ ", (queue_t*)taskQ, print_elem);
-    #endif
+#endif
     task_t *proxima = scheduler();
 
     if (proxima){
@@ -78,7 +78,7 @@ void dispatcher_body(){
         case READY:
           // taskQ = taskQ->next;
           break;
-        // Remover da fila caso esteja encerrada
+          // Remover da fila caso esteja encerrada
         case TERMINATED:
           queue_remove( (queue_t**)&taskQ, (queue_t*)proxima);
           break;
@@ -92,7 +92,7 @@ void dispatcher_body(){
   dispatcher.endSysTime = now;
   dispatcher.totalSysTime = now - dispatcher.startSysTime;
   printf("Task %6d exit: execution time %6d ms, processor time %6d ms, %6d activations\n",
-         dispatcher.id,dispatcher.totalSysTime,dispatcher.totalProcTime,dispatcher.activations);
+      dispatcher.id,dispatcher.totalSysTime,dispatcher.totalProcTime,dispatcher.activations);
   // task_switch(&mainTask);
 }
 
@@ -147,9 +147,9 @@ void ppos_init(){
 
   debug_print("PPOS: Iniciado o Sistema\n");
   debug_print("PPOS: Lançando dispatcher\n");
-  #ifdef DEBUG
+#ifdef DEBUG
   queue_print("PPOS: taskQ ", (queue_t*)taskQ, print_elem);
-  #endif
+#endif
   task_yield();
 }
 
@@ -180,6 +180,7 @@ int task_create(task_t *task, void (*start_func)(void *), void *arg){
   task->activations   = 0;
   task->lastProcTime  = 0;
   task->totalProcTime = 0;
+  task->joined = NULL;
   queue_append( (queue_t**)&taskQ, (queue_t*)task);
   userTasks++;
   debug_print("PPOS: Criado task com id %d, atualmente %d userTasks\n", lastID,userTasks);
@@ -192,12 +193,20 @@ void task_exit(int exit_code){
   currTask->status = TERMINATED;
   userTasks--;
 
+  // Retorna o exit code pra todas as task que deram join
+  if(currTask->joined){
+    while(currTask->joined){
+      currTask->joined->rcvexit = exit_code;
+      task_resume(currTask->joined, &(currTask->joined));
+    }
+  }
+
   unsigned int now = systime();
   currTask->totalProcTime += now - currTask->lastProcTime;
   currTask->endSysTime = now;
   currTask->totalSysTime = now - currTask->startSysTime;
   printf("Task %6d exit: execution time %6d ms, processor time %6d ms, %6d activations\n",
-         currTask->id,currTask->totalSysTime,currTask->totalProcTime,currTask->activations);
+      currTask->id,currTask->totalSysTime,currTask->totalProcTime,currTask->activations);
   task_switch(&dispatcher);
 }
 
@@ -226,6 +235,27 @@ int task_id(){
   return currTask->id;
 }
 
+// suspende a tarefa atual na fila "queue"
+void task_suspend (task_t **queue){
+  int rmstatus = queue_remove((queue_t**)(&taskQ), (queue_t*)currTask);
+  if(rmstatus < 0 && rmstatus > -4){
+    fprintf(stderr, "PPOS: WARNING: tentativa invalida de suspender tarefa\n");
+  }
+  currTask->status = SUSPENDED;
+  /*int addstatus =*/ queue_append((queue_t**)queue, (queue_t*)currTask);
+  task_yield();
+}
+
+// acorda a tarefa indicada, que está suspensa na fila indicada
+void task_resume (task_t *task, task_t **queue){
+  int rmstatus = queue_remove((queue_t**)queue, (queue_t*)task);
+  if(rmstatus < 0 && rmstatus > -4){
+    fprintf(stderr, "PPOS: WARNING: tentativa invalida de suspender tarefa\n");
+  }
+  task->status = READY;
+  /*int addstatus =*/ queue_append((queue_t**)(&taskQ), (queue_t*)task);
+}
+
 // devolve a cpu para o sistema
 void task_yield (){
   task_switch(&dispatcher);
@@ -250,6 +280,14 @@ void task_setprio (task_t *task, int prio){
 int task_getprio (task_t *task){
   if (!task)
     task = currTask;
-  
+
   return task->statprio;
+}
+
+// a tarefa corrente aguarda o encerramento de outra task
+int task_join (task_t *task){
+  if(currTask->id == task->id) return -1;
+  if(task->status == TERMINATED) return -1;
+  task_suspend(&(task->joined));
+  return currTask->rcvexit;
 }
