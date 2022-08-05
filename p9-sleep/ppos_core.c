@@ -17,7 +17,7 @@
 #define debug_print(...) do{ } while (0)
 #endif
 
-task_t mainTask, *currTask, *taskQ, dispatcher;
+task_t mainTask, *currTask, *taskQ, *sleepingQ, dispatcher;
 int lastID, userTasks;
 unsigned int globalSysTime;
 
@@ -65,6 +65,10 @@ task_t *scheduler(){
 // cuida de lançar tasks
 void dispatcher_body(){
   while(userTasks > 0){
+    // Acordar tarefas dormindo
+    //
+    // -------------
+
 #ifdef DEBUG
     queue_print("PPOS: taskQ ", (queue_t*)taskQ, print_elem);
 #endif
@@ -290,4 +294,12 @@ int task_join (task_t *task){
   if(task->status == TERMINATED) return -1;
   task_suspend(&(task->joined));
   return currTask->rcvexit;
+}
+
+// suspende a tarefa corrente por t milissegundos
+void task_sleep (int t){
+  unsigned int now = systime();
+  currTask->wakeupTime = now + t;
+  currTask->status = SLEEPING;
+  task_suspend(&(sleepingQ));
 }

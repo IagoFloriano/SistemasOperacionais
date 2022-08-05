@@ -12,6 +12,7 @@
 #define NEW 2
 #define SUSPENDED 3
 #define TERMINATED 4
+#define SLEEPING 5
 
 #include <ucontext.h>		// biblioteca POSIX de trocas de contexto
 
@@ -31,6 +32,7 @@ typedef struct task_t
   unsigned int activations   ;
   unsigned int lastProcTime  ;
   unsigned int totalProcTime ;
+  unsigned int wakeupTime    ;
   struct task_t *joined;
   int rcvexit;
   // ... (outros campos serão adicionados mais tarde)
