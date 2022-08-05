@@ -52,6 +52,7 @@ void print_elem(void *ptr){
 // retorna qual task será a proxima a ser executada
 task_t *scheduler(){
   task_t *oldest = taskQ;
+  if(!oldest) return NULL;
   task_t *temp = taskQ->next;
   oldest->dinprio--;
   while(temp != taskQ){
@@ -66,7 +67,13 @@ task_t *scheduler(){
 void dispatcher_body(){
   while(userTasks > 0){
     // Acordar tarefas dormindo
-    //
+    int sleepSize = queue_size((queue_t*)sleepingQ);
+    int now = systime();
+    for(int i=0; i < sleepSize; i++){
+      if(sleepingQ->wakeupTime <= now)
+        task_resume(sleepingQ, &sleepingQ);
+      if(sleepingQ) sleepingQ = sleepingQ->next;
+    }
     // -------------
 
 #ifdef DEBUG
