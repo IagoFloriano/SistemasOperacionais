@@ -41,6 +41,9 @@ typedef struct task_t
 // estrutura que define um semáforo
 typedef struct
 {
+  int lock;
+  int counter;
+  task_t *fila;
   // preencher quando necessário
 } semaphore_t ;
 

@@ -1,27 +1,27 @@
 DEBUG_FLAGS = -g -DDEBUG
 CFLAGS = -Wall -std=gnu99 # $(DEBUG_FLAGS)
-EXE = pingpong-semaphore pingpong-racecond
+EXE = pingpong-semaphore
 
 #------------------------------------------------------------------------------
 .PHONY : all clean
 
 #------------------------------------------------------------------------------
-all : $(EXE)
+all : $(EXE) pingpong-racecond
 
 debug: CFLAGS += $(DEBUG_FLAGS)
 debug: all
 
-# $(EXE): ppos_core.o $(EXE).o queue.o
-	# gcc -o $@ $^
+$(EXE): ppos_core.o $(EXE).o queue.o ppos_ipc.o
+	gcc -o $@ $^
+
+pingpong-racecond: ppos_core.o pingpong-racecond.o queue.o ppos_ipc.o
+	gcc -o $@ $^
 
 %.o: %.c
 	gcc $(CFLAGS) -c $^
-
-%: ppos_core.o %.o queue.o
-	gcc -o $@ $^
 #------------------------------------------------------------------------------
 clean :
 	$(RM) *.o
 
 purge : clean
-	$(RM) $(EXE)
+	$(RM) $(EXE) pingpong-racecond
