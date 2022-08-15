@@ -44,6 +44,7 @@ typedef struct
   int lock;
   int counter;
   task_t *fila;
+  int vivo;
   // preencher quando necessário
 } semaphore_t ;
 

@@ -1,5 +1,6 @@
 // GRR20196049 Iago Mello Floriano
 
+#include <stdio.h>
 #include "ppos.h"
 #include "ppos_data.h"
 #include "queue.h"
@@ -11,14 +12,15 @@ int sem_create (semaphore_t *s, int value){
   s->lock = 0;
   s->counter = value;
   s->fila = NULL;
+  s->vivo = 1;
   return 0;
 }
 
 // requisita o semáforo
 int sem_down (semaphore_t *s){
-  if(!s) return -1;
+  if(!s || !s->vivo) return -1;
 
-  while (__sync_fetch_and_or(&(s->lock), 1))
+  while(__sync_fetch_and_or(&(s->lock), 1))
     task_yield();
 
   if(--(s->counter) < 0){
@@ -27,14 +29,16 @@ int sem_down (semaphore_t *s){
   } else
     s->lock = 0;
 
+  if(!s->vivo) return -1;
+
   return 0;
 }
 
 // libera o semáforo
 int sem_up (semaphore_t *s){
-  if(!s) return -1;
+  if(!s || !s->vivo) return -1;
 
-  while (__sync_fetch_and_or(&(s->lock), 1))
+  while(__sync_fetch_and_or(&(s->lock), 1))
     task_yield();
 
   if(++(s->counter) <= 0){
@@ -48,5 +52,14 @@ int sem_up (semaphore_t *s){
 
 // destroi o semáforo, liberando as tarefas bloqueadas
 int sem_destroy (semaphore_t *s){
+  if(!s || !s->vivo) return -1;
+
+  while(__sync_fetch_and_or(&(s->lock), 1))
+    task_yield();
+
+  s->vivo = 0;
+  while(s->fila)
+    task_resume(s->fila, &(s->fila));
+
   return 0;
 }
