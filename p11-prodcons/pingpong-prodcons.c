@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include "ppos.h"
 #include "queue.h"
-#define SLEEPTIME 100
+#define SLEEPTIME 1000
 
 task_t p1, p2, p3, c1, c2;
 semaphore_t s_buffer, s_item, s_vaga;
@@ -51,11 +51,12 @@ void consumidor(void *arg){
     // retira item do buffer
     fila_t *elemtemp = buffer;
     queue_remove( (queue_t**)&buffer, (queue_t*)buffer);
-    printf("%s%2d (%d)\n", (char*)arg, elemtemp->valor, queue_size((queue_t*)buffer));
 
     sem_up(&s_buffer);
     sem_up(&s_vaga);
     // print item
+    printf("%s%2d (%d)\n", (char*)arg, elemtemp->valor, queue_size((queue_t*)buffer));
+    free(elemtemp);
     task_sleep(SLEEPTIME);
   }
   task_exit(task_id());
