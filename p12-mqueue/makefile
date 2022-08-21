@@ -1,5 +1,5 @@
 DEBUG_FLAGS = -g -DDEBUG
-CFLAGS = -Wall -std=gnu99
+CFLAGS = -Wall -std=gnu99 -lm
 EXE = pingpong-mqueue
 
 #------------------------------------------------------------------------------
@@ -12,7 +12,7 @@ debug: CFLAGS += $(DEBUG_FLAGS)
 debug: all
 
 $(EXE): ppos_core.o $(EXE).o queue.o ppos_ipc.o
-	gcc -o $@ $^
+	gcc -o $@ $^ $(CFLAGS)
 
 %.o: %.c
 	gcc $(CFLAGS) -c $^

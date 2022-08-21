@@ -45,7 +45,6 @@ typedef struct
   int counter;
   task_t *fila;
   int vivo;
-  // preencher quando necessário
 } semaphore_t ;
 
 // estrutura que define um mutex
@@ -60,10 +59,21 @@ typedef struct
   // preencher quando necessário
 } barrier_t ;
 
+// buffer para ser usado na fila de mensagens
+typedef struct mqbuffer_t
+{
+  struct mqbuffer_t *prev; // Para ser usado como fila
+  struct mqbuffer_t *next;
+  void *data;
+} mqbuffer_t;
+
 // estrutura que define uma fila de mensagens
 typedef struct
 {
-  // preencher quando necessário
+  semaphore_t vagas, dados, buffersem;
+  int data_size;
+  mqbuffer_t *buffer;
+  int alive;
 } mqueue_t ;
 
 #endif
